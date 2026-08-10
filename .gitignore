@@ -1,0 +1,10 @@
+# Configuración local (contiene credenciales)
+config.php
+
+# OS
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

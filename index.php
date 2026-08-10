@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Inspecciones — Seguridad</title>
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 18h10M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 9h3M8 12h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".5"/><circle cx="17" cy="9" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+    <span>Control de Inspecciones</span>
+  </div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-tabs" id="tabs">
+    <button class="on" data-tab="vehiculos">Vehículos</button>
+    <button data-tab="dashboard">Dashboard</button>
+    <button data-tab="historial">Historial</button>
+    <button data-tab="config">Configuración</button>
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-date" id="fechaHoy"></span>
+    <div class="dropdown" id="ddInsp">
+      <button class="btn btn-amber" onclick="toggleDD()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a1 1 0 011 1v5h5a1 1 0 110 2H9v5a1 1 0 11-2 0V9H2a1 1 0 010-2h5V2a1 1 0 011-1z"/></svg>
+        Nueva inspección
+      </button>
+      <div class="dropdown-menu">
+        <button class="dropdown-item" onclick="abrirModal('botiquin')"><span class="icon">🩹</span> Inspección de Botiquín</button>
+        <button class="dropdown-item" onclick="abrirModal('carretilla')"><span class="icon">🛒</span> Inspección de Carretilla</button>
+        <button class="dropdown-item" onclick="abrirModal('extintor')"><span class="icon">🧯</span> Inspección de Extintor</button>
+        <button class="dropdown-item" onclick="abrirModal('caja_fuerte')"><span class="icon">🔐</span> Inspección de Caja Fuerte</button>
+        <button class="dropdown-item" onclick="abrirModal('boton_panico')"><span class="icon">🚨</span> Inspección de Botón de Pánico</button>
+        <button class="dropdown-item" onclick="abrirModal('inspeccion_vehiculo')"><span class="icon">🚛</span> Inspección de Vehículo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ═══ TAB: VEHÍCULOS ═══ -->
+<div class="tab on" id="tab-vehiculos">
+  <div class="kpis" id="kpis1"></div>
+  <div class="fbar">
+    <input type="search" class="search" placeholder="Buscar placa, marca o zona…" id="searchBox" oninput="filtrar()">
+    <button class="chip on" onclick="setFilt('todos',this)">Todos</button>
+    <button class="chip" onclick="setFilt('ok',this)">✓ Cumple</button>
+    <button class="chip" onclick="setFilt('warn',this)">⚠ Alerta</button>
+    <button class="chip" onclick="setFilt('fail',this)">✕ Incumple</button>
+    <span class="fbar-count" id="fcount"></span>
+  </div>
+  <div class="vgrid" id="vgrid"></div>
+  <div class="empty" id="emptyV" style="display:none">
+    <h3>Sin vehículos</h3>
+    <p>Ve a Configuración para agregar placas y comenzar las inspecciones.</p>
+  </div>
+</div>
+
+<!-- ═══ TAB: DASHBOARD ═══ -->
+<div class="tab" id="tab-dashboard">
+  <div class="kpis" id="kpis2"></div>
+  <div class="dcard" style="margin-bottom:14px">
+    <h3>Cumplimiento por tipo de inspección</h3>
+    <div id="dashTipos" class="inspection-dashboard"></div>
+  </div>
+  <div class="dcard" style="margin-bottom:14px">
+    <h3>Vehículos que no cumplen</h3>
+    <div id="dashNoCumplen"></div>
+  </div>
+  <div class="dcard">
+    <h3>Vencimientos próximos (30 días)</h3>
+    <div class="tw" style="max-height:280px;overflow-y:auto">
+      <table class="tbl">
+        <thead><tr><th>Placa</th><th>Elemento</th><th>Vcto.</th><th>Días</th><th></th></tr></thead>
+        <tbody id="dashVenc"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: HISTORIAL ═══ -->
+<div class="tab" id="tab-historial">
+  <div class="fbar" style="margin-bottom:12px">
+    <button class="chip on" onclick="setHistFilt('todas',this)">Todas</button>
+    <button class="chip" onclick="setHistFilt('botiquin',this)">🩹 Botiquines</button>
+    <button class="chip" onclick="setHistFilt('carretilla',this)">🛒 Carretillas</button>
+    <button class="chip" onclick="setHistFilt('extintor',this)">🧯 Extintores</button>
+    <button class="chip" onclick="setHistFilt('caja_fuerte',this)">🔐 Caja Fuerte</button>
+    <button class="chip" onclick="setHistFilt('boton_panico',this)">🚨 Botón Pánico</button>
+    <button class="chip" onclick="setHistFilt('inspeccion_vehiculo',this)">🚛 Vehículo</button>
+  </div>
+  <div class="csec">
+    <div class="tw"><table class="tbl" id="tblHist">
+      <thead><tr><th>Fecha</th><th>Tipo</th><th>Placa</th><th>Inspector</th><th>Resultado</th><th>Observaciones</th></tr></thead>
+      <tbody id="tbHist"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ═══ TAB: CONFIG ═══ -->
+<div class="tab" id="tab-config">
+  <div class="csec">
+    <h3>Agregar vehículo / equipo</h3>
+    <div class="crow">
+      <input type="text" class="pi" placeholder="PLACA" id="inPlaca" maxlength="12">
+      <input type="text" class="ni" placeholder="Marca (ej: INTERNATIONAL)" id="inMarca">
+      <input type="text" class="ni" placeholder="Línea (ej: MV607 SBA 4X2)" id="inLinea">
+    </div>
+    <div class="crow">
+      <select class="fi" id="inTipo" style="width:auto"><option>Sencillo</option><option>Camioneta</option><option>Doble troque</option></select>
+      <input type="number" class="fi" placeholder="Año" id="inAño" style="width:80px" min="2000" max="2030">
+      <input type="text" class="ni" placeholder="Zona de trabajo" id="inZona">
+      <button class="btn btn-navy btn-sm" onclick="addVeh()">Agregar</button>
+    </div>
+  </div>
+  <div class="csec">
+    <h3>Inspectores</h3>
+    <div class="crow">
+      <input type="text" class="ni" placeholder="Nombre del inspector" id="inInsp">
+      <button class="btn btn-navy btn-sm" onclick="addInsp()">Agregar</button>
+    </div>
+    <div id="listaInsp"></div>
+  </div>
+  <div class="csec">
+    <h3>Flota registrada</h3>
+    <div id="listaFlota"></div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ MODAL ═══ -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)cerrarModal()">
+  <div class="mpanel">
+    <div class="m-head">
+      <span id="mIcon" style="font-size:1.2rem"></span>
+      <h2 id="mTitle"></h2>
+      <button class="m-close" onclick="cerrarModal()">✕</button>
+    </div>
+    <div class="m-body" id="mBody"></div>
+    <div class="m-foot">
+      <button class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-green" onclick="guardar()">Guardar inspección</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
