@@ -75,15 +75,21 @@ function toggleTheme() {
   const next = current === 'light' ? 'dark' : 'light';
   root.setAttribute('data-theme', next);
   localStorage.setItem('theme', next);
-  document.getElementById('btnTheme').textContent = next === 'dark' ? '☀️' : '🌙';
+  const icon = next === 'dark' ? '☀️' : '🌙';
+  const btn1 = document.getElementById('btnTheme');
+  const btn2 = document.getElementById('btnThemeMobile');
+  if (btn1) btn1.textContent = icon;
+  if (btn2) btn2.textContent = icon;
 }
-// Restaurar tema guardado
 (function() {
   const saved = localStorage.getItem('theme');
   if (saved) {
     document.documentElement.setAttribute('data-theme', saved);
-    const btn = document.getElementById('btnTheme');
-    if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+    const icon = saved === 'dark' ? '☀️' : '🌙';
+    const btn1 = document.getElementById('btnTheme');
+    const btn2 = document.getElementById('btnThemeMobile');
+    if (btn1) btn1.textContent = icon;
+    if (btn2) btn2.textContent = icon;
   }
 })();
 
@@ -91,16 +97,60 @@ function toggleTheme() {
 //  INIT
 // ═══════════════════════════════════
 document.getElementById('fechaHoy').textContent = new Date().toLocaleDateString('es-CO', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
-document.getElementById('tabs').addEventListener('click', e => {
-  if (e.target.tagName !== 'BUTTON') return;
-  document.querySelectorAll('.topbar-tabs button').forEach(b => b.classList.remove('on'));
-  e.target.classList.add('on');
+
+let zonaFilt = 'todos';
+
+// Subgrupos de zona → placas
+const ZONAS_GRUPO = {
+  'Siberia': [], // se llenará con las placas que no estén en Chapinero ni Engativá
+  'Chapinero': ['LCL743','LGU451','LCL748','LGU432','LGU482','LJT716','LJT778','LJT779','LJT836','LJT780','LJT843','LJT840','LJT681'],
+  'Engativa': []  // se definirán después
+};
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  document.getElementById('tab-' + e.target.dataset.tab).classList.add('on');
-  if (e.target.dataset.tab === 'dashboard') renderDash();
-  if (e.target.dataset.tab === 'historial') renderHist();
-  if (e.target.dataset.tab === 'config') renderConfig();
-});
+  document.getElementById('tab-' + tab).classList.add('on');
+  // Mostrar/ocultar submenú de vehículos
+  const subVeh = document.getElementById('sbSubVeh');
+  if (tab === 'vehiculos') subVeh.classList.add('open');
+  else subVeh.classList.remove('open');
+  if (tab === 'dashboard') renderDash();
+  if (tab === 'historial') renderHist();
+  if (tab === 'config') renderConfig();
+  // Cerrar sidebar en mobile
+  closeSidebar();
+}
+
+function setZonaFilt(zona, btn) {
+  zonaFilt = zona;
+  document.querySelectorAll('.sb-subitem').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  filtrar();
+  closeSidebar();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sbOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sbOverlay').classList.remove('open');
+}
+
+function getZonaPlacas(zona) {
+  if (zona === 'todos') return null; // sin filtro
+  if (zona === 'Siberia') {
+    // Siberia = todo lo que NO sea Chapinero ni Engativá
+    const chapinero = ZONAS_GRUPO['Chapinero'];
+    const engativa = ZONAS_GRUPO['Engativa'];
+    const excluidas = [...chapinero, ...engativa];
+    return getFlota().filter(v => !excluidas.includes(v.placa)).map(v => v.placa);
+  }
+  return ZONAS_GRUPO[zona] || [];
+}
 
 async function init() {
   await cargarDatos();
@@ -324,17 +374,18 @@ function filtrarDesdeKPI(estado) {
 }
 function filtrar() {
   const q = document.getElementById('searchBox').value.trim().toUpperCase();
+  const zonaPlacas = getZonaPlacas(zonaFilt);
   let vis = 0, tot = 0;
   document.querySelectorAll('.vc').forEach(c => {
     tot++;
     const p = c.dataset.placa, e = c.dataset.estado, z = (c.dataset.zona || '').toUpperCase(), m = (c.dataset.marca || '').toUpperCase();
     const w = c.dataset.warn, fl = c.dataset.fail;
     let matchFilt = filtAct === 'todos' || e === filtAct;
-    // Para KPI "warn": mostrar todos los que tengan alertas (incluso si también incumplen)
     if (filtAct === 'warn') matchFilt = w === '1';
-    // Para KPI "fail": mostrar todos los que incumplen
     if (filtAct === 'fail') matchFilt = fl === '1';
-    const show = (!q || p.includes(q) || z.includes(q) || m.includes(q)) && matchFilt;
+    // Filtro de zona/subgrupo
+    const matchZona = !zonaPlacas || zonaPlacas.includes(p);
+    const show = (!q || p.includes(q) || z.includes(q) || m.includes(q)) && matchFilt && matchZona;
     c.style.display = show ? '' : 'none';
     if (show) vis++;
   });
