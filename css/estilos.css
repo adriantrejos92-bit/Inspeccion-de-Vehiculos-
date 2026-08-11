@@ -116,7 +116,9 @@ body{font-family:"Segoe UI",system-ui,-apple-system,sans-serif;background:var(--
 
 /* ─── KPI STRIP ─── */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px;margin-bottom:18px}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh-sm)}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh-sm);transition:.2s}
+.kpi-click{cursor:pointer}
+.kpi-click:hover{border-color:var(--navy);box-shadow:var(--sh-md);transform:translateY(-2px)}
 .kpi-l{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:4px}
 .kpi-v{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
 .kpi-s{font-size:.72rem;color:var(--muted);margin-top:3px}

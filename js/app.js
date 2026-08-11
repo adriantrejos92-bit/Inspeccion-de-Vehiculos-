@@ -176,21 +176,27 @@ function getLastInsp(placa, tipo) {
 function evalInsp(insp) {
   if (!insp) return { estado: 'none', pct: 0 };
   const items = insp.items || {};
-  const checks = Object.entries(items).filter(([k, v]) => typeof v === 'boolean');
-  const dates = Object.entries(items).filter(([k, v]) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v));
-  const total = checks.length;
-  const ok = checks.filter(([, v]) => v).length;
-  const pct = total ? Math.round(ok / total * 100) : 0;
   const hoy = new Date();
-  let vencido = false, proximo = false;
-  dates.forEach(([, f]) => {
-    const d = new Date(f + 'T00:00:00');
-    const dias = Math.ceil((d - hoy) / 864e5);
-    if (dias < 0) vencido = true;
-    else if (dias <= 30) proximo = true;
+  let total = 0, ok = 0, vencido = false, proximo = false;
+
+  Object.entries(items).forEach(([k, v]) => {
+    if (typeof v === 'boolean') {
+      total++;
+      if (v) ok++;
+    } else if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+      total++;
+      const d = new Date(v + 'T00:00:00');
+      const dias = Math.ceil((d - hoy) / 864e5);
+      if (dias < 0) { vencido = true; }
+      else if (dias <= 30) { proximo = true; ok++; }
+      else { ok++; }
+    }
   });
-  if (pct < 100 || vencido) return { estado: 'fail', pct };
+
+  const pct = total ? Math.round(ok / total * 100) : 0;
+  if (vencido || (total > 0 && ok < total && !proximo)) return { estado: 'fail', pct };
   if (proximo) return { estado: 'warn', pct };
+  if (total === 0) return { estado: 'none', pct: 0 };
   return { estado: 'ok', pct };
 }
 
@@ -280,6 +286,20 @@ function renderDetVeh(placa) {
 //  FILTROS
 // ═══════════════════════════════════
 function setFilt(f, btn) { filtAct = f; document.querySelectorAll('#tab-vehiculos .chip').forEach(c => c.classList.remove('on')); btn.classList.add('on'); filtrar(); }
+function filtrarDesdeKPI(estado) {
+  filtAct = estado;
+  document.querySelectorAll('#tab-vehiculos .chip').forEach(c => {
+    c.classList.remove('on');
+    if ((estado === 'todos' && c.textContent.includes('Todos')) ||
+        (estado === 'ok' && c.textContent.includes('Cumple')) ||
+        (estado === 'warn' && c.textContent.includes('Alerta')) ||
+        (estado === 'fail' && c.textContent.includes('Incumple'))) c.classList.add('on');
+  });
+  if (estado === 'none') {
+    document.querySelectorAll('#tab-vehiculos .chip').forEach(c => c.classList.remove('on'));
+  }
+  filtrar();
+}
 function filtrar() {
   const q = document.getElementById('searchBox').value.trim().toUpperCase();
   let vis = 0, tot = 0;
@@ -301,11 +321,11 @@ function renderKPIs() {
   let ok = 0, warn = 0, fail = 0, none = 0;
   f.forEach(v => { const e = evalVehiculo(v.placa); if (e.estado === 'ok') ok++; else if (e.estado === 'warn') warn++; else if (e.estado === 'fail') fail++; else none++ });
   const h = `
-    <div class="kpi"><div class="kpi-l">Total flota</div><div class="kpi-v">${tot}</div><div class="kpi-s">equipos registrados</div></div>
-    <div class="kpi"><div class="kpi-l">Cumplen</div><div class="kpi-v g">${ok}</div><div class="kpi-s">${tot ? Math.round(ok / tot * 100) : 0}% de la flota</div></div>
-    <div class="kpi"><div class="kpi-l">Con alertas</div><div class="kpi-v a">${warn}</div><div class="kpi-s">próximos a vencer</div></div>
-    <div class="kpi"><div class="kpi-l">Incumplen</div><div class="kpi-v r">${fail}</div><div class="kpi-s">requieren atención</div></div>
-    <div class="kpi"><div class="kpi-l">Sin inspección</div><div class="kpi-v">${none}</div><div class="kpi-s">pendientes</div></div>
+    <div class="kpi kpi-click" onclick="filtrarDesdeKPI('todos')"><div class="kpi-l">Total flota</div><div class="kpi-v">${tot}</div><div class="kpi-s">equipos registrados</div></div>
+    <div class="kpi kpi-click" onclick="filtrarDesdeKPI('ok')"><div class="kpi-l">Cumplen</div><div class="kpi-v g">${ok}</div><div class="kpi-s">${tot ? Math.round(ok / tot * 100) : 0}% de la flota</div></div>
+    <div class="kpi kpi-click" onclick="filtrarDesdeKPI('warn')"><div class="kpi-l">Con alertas</div><div class="kpi-v a">${warn}</div><div class="kpi-s">próximos a vencer</div></div>
+    <div class="kpi kpi-click" onclick="filtrarDesdeKPI('fail')"><div class="kpi-l">Incumplen</div><div class="kpi-v r">${fail}</div><div class="kpi-s">requieren atención</div></div>
+    <div class="kpi kpi-click" onclick="filtrarDesdeKPI('none')"><div class="kpi-l">Sin inspección</div><div class="kpi-v">${none}</div><div class="kpi-s">pendientes</div></div>
   `;
   document.getElementById('kpis1').innerHTML = h;
 }
