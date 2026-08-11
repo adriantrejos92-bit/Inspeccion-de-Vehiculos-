@@ -261,7 +261,8 @@ function renderDetVeh(placa) {
         rows += `<div class="det-row" style="color:var(--text2)">▸ ${label}: ${v}</div>`;
       }
     });
-    const fotos = insp.fotos && insp.fotos.length ? `<div class="foto-gallery">${insp.fotos.map(src => `<img src="${src}" onclick="abrirLightbox('${src.replace(/'/g, "\\'")}')">`).join('')}</div>` : '';
+    const fotosArr = Array.isArray(insp.fotos) ? insp.fotos : [];
+    const fotos = fotosArr.length ? `<div class="foto-gallery">${fotosArr.map(src => `<img src="${src}" onclick="abrirLightbox('${src.replace(/'/g, "\\'")}')">`).join('')}</div>` : '';
     html += `<div class="det-sec">
       <div class="det-h"><div class="sem-d ${ev.estado}"></div>${t.icon} ${t.name} <span style="margin-left:auto;font-size:.68rem;color:var(--muted)">${ev.pct}% · ${insp.fecha}</span></div>
       <div class="det-grid">${rows}</div>
