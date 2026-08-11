@@ -756,6 +756,21 @@ function renderHist() {
 }
 
 // ═══════════════════════════════════
+//  EXPORTAR EXCEL
+// ═══════════════════════════════════
+function descargarExcel() {
+  let url = 'api/exportar.php?';
+  const params = [];
+  const desde = document.getElementById('expDesde').value;
+  const hasta = document.getElementById('expHasta').value;
+  if (desde) params.push('desde=' + desde);
+  if (hasta) params.push('hasta=' + hasta);
+  if (histFilt !== 'todas') params.push('tipo=' + histFilt);
+  url += params.join('&');
+  window.open(url, '_blank');
+}
+
+// ═══════════════════════════════════
 //  CANVAS BAR CHART
 // ═══════════════════════════════════
 function drawBarChart(canvasId, data) {

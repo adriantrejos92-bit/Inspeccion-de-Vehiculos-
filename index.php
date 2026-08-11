@@ -83,7 +83,7 @@
 
 <!-- ═══ TAB: HISTORIAL ═══ -->
 <div class="tab" id="tab-historial">
-  <div class="fbar" style="margin-bottom:12px">
+  <div class="fbar" style="margin-bottom:12px;flex-wrap:wrap;gap:8px">
     <button class="chip on" onclick="setHistFilt('todas',this)">Todas</button>
     <button class="chip" onclick="setHistFilt('botiquin',this)">🩹 Botiquines</button>
     <button class="chip" onclick="setHistFilt('carretilla',this)">🛒 Carretillas</button>
@@ -91,6 +91,13 @@
     <button class="chip" onclick="setHistFilt('caja_fuerte',this)">🔐 Caja Fuerte</button>
     <button class="chip" onclick="setHistFilt('boton_panico',this)">🚨 Botón Pánico</button>
     <button class="chip" onclick="setHistFilt('inspeccion_vehiculo',this)">🚛 Vehículo</button>
+  </div>
+  <div class="fbar" style="margin-bottom:12px;flex-wrap:wrap;gap:8px;align-items:center">
+    <label style="font-size:.78rem;font-weight:600;color:var(--text2)">Desde:</label>
+    <input type="date" id="expDesde" class="fi" style="width:auto;padding:4px 8px;font-size:.78rem">
+    <label style="font-size:.78rem;font-weight:600;color:var(--text2)">Hasta:</label>
+    <input type="date" id="expHasta" class="fi" style="width:auto;padding:4px 8px;font-size:.78rem">
+    <button class="btn btn-navy btn-sm" onclick="descargarExcel()" style="margin-left:auto">📥 Descargar Excel</button>
   </div>
   <div class="csec">
     <div class="tw"><table class="tbl" id="tblHist">
