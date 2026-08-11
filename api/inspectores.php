@@ -55,10 +55,17 @@ if ($metodo === 'POST') {
         responderJSON(['error' => "Ya existe un inspector con nombre $nombre"], 409);
     }
 
-    $stmt = $pdo->prepare('INSERT INTO inspectores (nombre) VALUES (?)');
-    $stmt->execute([$nombre]);
+    if (DB_DRIVER === 'pgsql') {
+        $stmt = $pdo->prepare('INSERT INTO inspectores (nombre) VALUES (?) RETURNING id');
+        $stmt->execute([$nombre]);
+        $newId = (int) $stmt->fetchColumn();
+    } else {
+        $stmt = $pdo->prepare('INSERT INTO inspectores (nombre) VALUES (?)');
+        $stmt->execute([$nombre]);
+        $newId = (int) $pdo->lastInsertId();
+    }
 
-    responderJSON(['ok' => true, 'id' => (int) $pdo->lastInsertId(), 'nombre' => $nombre], 201);
+    responderJSON(['ok' => true, 'id' => $newId, 'nombre' => $nombre], 201);
 }
 
 // ---------------------------------------------------------

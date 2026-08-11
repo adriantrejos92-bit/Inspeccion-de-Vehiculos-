@@ -136,13 +136,21 @@ if ($metodo === 'POST') {
 
     $itemsJSON = json_encode($items, JSON_UNESCAPED_UNICODE);
 
-    $stmt = $pdo->prepare(
-        'INSERT INTO inspecciones (tipo, placa, inspector, fecha, hora, observaciones, items)
-         VALUES (?, ?, ?, ?, ?, ?, ?)'
-    );
-    $stmt->execute([$tipo, $placa, $inspector, $fecha, $hora, $obs, $itemsJSON]);
-
-    $id = (int) $pdo->lastInsertId();
+    if (DB_DRIVER === 'pgsql') {
+        $stmt = $pdo->prepare(
+            'INSERT INTO inspecciones (tipo, placa, inspector, fecha, hora, observaciones, items)
+             VALUES (?, ?, ?, ?, ?, ?, ?::jsonb) RETURNING id'
+        );
+        $stmt->execute([$tipo, $placa, $inspector, $fecha, $hora, $obs, $itemsJSON]);
+        $id = (int) $stmt->fetchColumn();
+    } else {
+        $stmt = $pdo->prepare(
+            'INSERT INTO inspecciones (tipo, placa, inspector, fecha, hora, observaciones, items)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([$tipo, $placa, $inspector, $fecha, $hora, $obs, $itemsJSON]);
+        $id = (int) $pdo->lastInsertId();
+    }
 
     responderJSON([
         'ok'    => true,
