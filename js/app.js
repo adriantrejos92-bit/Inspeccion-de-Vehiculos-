@@ -100,26 +100,19 @@ document.getElementById('fechaHoy').textContent = new Date().toLocaleDateString(
 
 let zonaFilt = 'todos';
 
-// Subgrupos de zona → placas
-const ZONAS_GRUPO = {
-  'Siberia': [], // se llenará con las placas que no estén en Chapinero ni Engativá
-  'Chapinero': ['LCL743','LGU451','LCL748','LGU432','LGU482','LJT716','LJT778','LJT779','LJT836','LJT780','LJT843','LJT840','LJT681'],
-  'Engativa': []  // se definirán después
-};
+const SEDES = ['Siberia', 'Chapinero', 'Engativa'];
 
 function switchTab(tab, btn) {
   document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
   document.getElementById('tab-' + tab).classList.add('on');
-  // Mostrar/ocultar submenú de vehículos
   const subVeh = document.getElementById('sbSubVeh');
   if (tab === 'vehiculos') subVeh.classList.add('open');
   else subVeh.classList.remove('open');
   if (tab === 'dashboard') renderDash();
   if (tab === 'historial') renderHist();
   if (tab === 'config') renderConfig();
-  // Cerrar sidebar en mobile
   closeSidebar();
 }
 
@@ -127,8 +120,15 @@ function setZonaFilt(zona, btn) {
   zonaFilt = zona;
   document.querySelectorAll('.sb-subitem').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
+  renderKPIs();
   filtrar();
   closeSidebar();
+}
+
+function toggleCard(e, el) {
+  e.stopPropagation();
+  const card = el.closest('.vc');
+  card.classList.toggle('open');
 }
 
 function toggleSidebar() {
@@ -141,15 +141,19 @@ function closeSidebar() {
 }
 
 function getZonaPlacas(zona) {
-  if (zona === 'todos') return null; // sin filtro
+  if (zona === 'todos') return null;
   if (zona === 'Siberia') {
     // Siberia = todo lo que NO sea Chapinero ni Engativá
-    const chapinero = ZONAS_GRUPO['Chapinero'];
-    const engativa = ZONAS_GRUPO['Engativa'];
-    const excluidas = [...chapinero, ...engativa];
-    return getFlota().filter(v => !excluidas.includes(v.placa)).map(v => v.placa);
+    const otras = getFlota().filter(v => {
+      const z = (v.zona || '').toLowerCase();
+      return z !== 'chapinero' && z !== 'engativa' && z !== 'engativá';
+    });
+    return otras.map(v => v.placa);
   }
-  return ZONAS_GRUPO[zona] || [];
+  return getFlota().filter(v => {
+    const z = (v.zona || '').toLowerCase();
+    return z === zona.toLowerCase() || z === zona.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }).map(v => v.placa);
 }
 
 async function init() {
@@ -294,7 +298,7 @@ function renderGrid() {
     const ev = evalVehiculo(v.placa);
     const evArr = ev.evals || TIPOS_INSP.map(() => evalInsp(null));
     return `<div class="vc" data-placa="${v.placa}" data-estado="${ev.estado}" data-warn="${ev.hasWarn?1:0}" data-fail="${ev.hasFail?1:0}" data-zona="${v.zona || ''}" data-marca="${v.marca || ''}">
-      <div class="vc-head" onclick="this.closest('.vc').classList.toggle('open')">
+      <div class="vc-head" onclick="toggleCard(event, this)">
         <div class="sem-circle ${ev.estado}">${ev.estado === 'none' ? '—' : ev.pct + '%'}</div>
         <span class="placa">${v.placa}</span>
         <div class="vc-info">
