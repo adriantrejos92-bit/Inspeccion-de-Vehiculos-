@@ -64,31 +64,47 @@ $tipoLabels = [
 
 // ── Evaluar cumplimiento (misma lógica que el frontend) ──
 function evalCumplimiento($items) {
-    if (!is_array($items) || empty($items)) return ['estado' => 'Sin datos', 'pct' => 0];
+    if (!is_array($items) || empty($items)) return ['estado' => 'Sin datos', 'pct' => 0, 'alertas' => [], 'vencidos' => [], 'noOk' => []];
 
     $total = 0;
     $cumple = 0;
+    $alertas = [];
+    $vencidos = [];
+    $noOk = [];
+    $hoy = new DateTime();
 
     foreach ($items as $key => $val) {
+        $label = str_replace('_', ' ', $key);
         if (is_bool($val)) {
             $total++;
-            if ($val) $cumple++;
+            if ($val) { $cumple++; }
+            else { $noOk[] = $label; }
         } elseif (is_string($val) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $val)) {
             $total++;
             $d = new DateTime($val);
-            $hoy = new DateTime();
             $dias = (int) $hoy->diff($d)->format('%r%a');
-            if ($dias >= 0) $cumple++;
+            if ($dias < 0) {
+                $vencidos[] = $label . ' (vencido ' . abs($dias) . 'd)';
+            } elseif ($dias <= 30) {
+                $alertas[] = $label . ' (' . $dias . 'd restantes)';
+                $cumple++;
+            } else {
+                $cumple++;
+            }
         }
-        // strings no-fecha (como "Número carretilla") no se evalúan
     }
 
-    if ($total === 0) return ['estado' => 'N/A', 'pct' => 100];
+    if ($total === 0) return ['estado' => 'N/A', 'pct' => 100, 'alertas' => [], 'vencidos' => [], 'noOk' => []];
 
     $pct = round($cumple / $total * 100);
-    if ($pct === 100) return ['estado' => 'Cumple', 'pct' => 100];
-    if ($pct >= 70) return ['estado' => 'Alerta', 'pct' => $pct];
-    return ['estado' => 'No cumple', 'pct' => $pct];
+    $hasFail = count($vencidos) > 0 || count($noOk) > 0;
+    $hasWarn = count($alertas) > 0;
+
+    if ($hasFail) $estado = 'No cumple';
+    elseif ($hasWarn) $estado = 'Alerta';
+    else $estado = 'Cumple';
+
+    return ['estado' => $estado, 'pct' => $pct, 'alertas' => $alertas, 'vencidos' => $vencidos, 'noOk' => $noOk];
 }
 
 // ── Crear Excel ──
@@ -97,7 +113,7 @@ $sheet = $spreadsheet->getActiveSheet();
 $sheet->setTitle('Inspecciones');
 
 // Encabezados
-$headers = ['Placa', 'Tipo Vehículo', 'Zona', 'Tipo Inspección', 'Fecha', 'Hora', 'Inspector', 'Estado', '% Cumplimiento', 'Observaciones'];
+$headers = ['Fecha', 'Hora', 'Placa', 'Tipo Vehículo', 'Zona', 'Tipo Inspección', 'Inspector', 'Estado', '% Cumplimiento', 'Observaciones'];
 $col = 'A';
 foreach ($headers as $h) {
     $sheet->setCellValue($col . '1', $h);
@@ -120,16 +136,24 @@ foreach ($rows as $r) {
     $items = is_string($r['items']) ? json_decode($r['items'], true) : $r['items'];
     $ev = evalCumplimiento($items);
 
-    $sheet->setCellValue("A{$row}", $r['placa']);
-    $sheet->setCellValue("B{$row}", $r['tipo_vehiculo'] ?? '');
-    $sheet->setCellValue("C{$row}", $r['zona'] ?? '');
-    $sheet->setCellValue("D{$row}", $tipoLabels[$r['tipo']] ?? $r['tipo']);
-    $sheet->setCellValue("E{$row}", $r['fecha']);
-    $sheet->setCellValue("F{$row}", $r['hora']);
+    // Armar observaciones: alertas y vencidos separados por coma
+    $obsItems = [];
+    foreach ($ev['vencidos'] as $v) { $obsItems[] = '❌ ' . $v; }
+    foreach ($ev['noOk'] as $n) { $obsItems[] = '❌ ' . $n . ' (no cumple)'; }
+    foreach ($ev['alertas'] as $a) { $obsItems[] = '⚠ ' . $a; }
+    if (!empty($r['observaciones'])) { $obsItems[] = $r['observaciones']; }
+    $obsTexto = implode(', ', $obsItems);
+
+    $sheet->setCellValue("A{$row}", $r['fecha']);
+    $sheet->setCellValue("B{$row}", $r['hora']);
+    $sheet->setCellValue("C{$row}", $r['placa']);
+    $sheet->setCellValue("D{$row}", $r['tipo_vehiculo'] ?? '');
+    $sheet->setCellValue("E{$row}", $r['zona'] ?? '');
+    $sheet->setCellValue("F{$row}", $tipoLabels[$r['tipo']] ?? $r['tipo']);
     $sheet->setCellValue("G{$row}", $r['inspector']);
     $sheet->setCellValue("H{$row}", $ev['estado']);
     $sheet->setCellValue("I{$row}", $ev['pct'] . '%');
-    $sheet->setCellValue("J{$row}", $r['observaciones'] ?? '');
+    $sheet->setCellValue("J{$row}", $obsTexto);
 
     // Color según estado
     $color = 'FFFFFF';

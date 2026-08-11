@@ -67,6 +67,27 @@ let _fotosTemp = []; // fotos pendientes para la inspección actual
 const MAX_FOTOS = 5;
 
 // ═══════════════════════════════════
+//  TEMA CLARO / OSCURO
+// ═══════════════════════════════════
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme');
+  const next = current === 'light' ? 'dark' : 'light';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  document.getElementById('btnTheme').textContent = next === 'dark' ? '☀️' : '🌙';
+}
+// Restaurar tema guardado
+(function() {
+  const saved = localStorage.getItem('theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+    const btn = document.getElementById('btnTheme');
+    if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+  }
+})();
+
+// ═══════════════════════════════════
 //  INIT
 // ═══════════════════════════════════
 document.getElementById('fechaHoy').textContent = new Date().toLocaleDateString('es-CO', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
@@ -174,7 +195,7 @@ function getLastInsp(placa, tipo) {
 }
 
 function evalInsp(insp) {
-  if (!insp) return { estado: 'none', pct: 0 };
+  if (!insp) return { estado: 'none', pct: 0, hasWarn: false, hasFail: false };
   const items = insp.items || {};
   const hoy = new Date();
   let total = 0, ok = 0, vencido = false, proximo = false;
@@ -194,21 +215,22 @@ function evalInsp(insp) {
   });
 
   const pct = total ? Math.round(ok / total * 100) : 0;
-  if (vencido || (total > 0 && ok < total && !proximo)) return { estado: 'fail', pct };
-  if (proximo) return { estado: 'warn', pct };
-  if (total === 0) return { estado: 'none', pct: 0 };
-  return { estado: 'ok', pct };
+  if (total === 0) return { estado: 'none', pct: 0, hasWarn: false, hasFail: false };
+  const hasFail = vencido || ok < total;
+  const hasWarn = proximo;
+  const estado = hasFail ? 'fail' : hasWarn ? 'warn' : 'ok';
+  return { estado, pct, hasWarn, hasFail };
 }
 
 function evalVehiculo(placa) {
   const tipos = TIPOS_KEYS;
   const evals = tipos.map(t => evalInsp(getLastInsp(placa, t)));
   const withData = evals.filter(e => e.estado !== 'none');
-  if (!withData.length) return { estado: 'none', pct: 0, evals };
+  if (!withData.length) return { estado: 'none', pct: 0, evals, hasWarn: false, hasFail: false };
   const pct = Math.round(withData.reduce((s, e) => s + e.pct, 0) / withData.length);
-  const hasFail = withData.some(e => e.estado === 'fail');
-  const hasWarn = withData.some(e => e.estado === 'warn');
-  return { estado: hasFail ? 'fail' : hasWarn ? 'warn' : 'ok', pct, evals };
+  const hasFail = withData.some(e => e.hasFail);
+  const hasWarn = withData.some(e => e.hasWarn);
+  return { estado: hasFail ? 'fail' : hasWarn ? 'warn' : 'ok', pct, evals, hasWarn, hasFail };
 }
 
 // ═══════════════════════════════════
@@ -221,7 +243,7 @@ function renderGrid() {
   grid.innerHTML = f.map(v => {
     const ev = evalVehiculo(v.placa);
     const evArr = ev.evals || TIPOS_INSP.map(() => evalInsp(null));
-    return `<div class="vc" data-placa="${v.placa}" data-estado="${ev.estado}" data-zona="${v.zona || ''}" data-marca="${v.marca || ''}">
+    return `<div class="vc" data-placa="${v.placa}" data-estado="${ev.estado}" data-warn="${ev.hasWarn?1:0}" data-fail="${ev.hasFail?1:0}" data-zona="${v.zona || ''}" data-marca="${v.marca || ''}">
       <div class="vc-head" onclick="this.closest('.vc').classList.toggle('open')">
         <div class="sem-circle ${ev.estado}">${ev.estado === 'none' ? '—' : ev.pct + '%'}</div>
         <span class="placa">${v.placa}</span>
@@ -306,7 +328,13 @@ function filtrar() {
   document.querySelectorAll('.vc').forEach(c => {
     tot++;
     const p = c.dataset.placa, e = c.dataset.estado, z = (c.dataset.zona || '').toUpperCase(), m = (c.dataset.marca || '').toUpperCase();
-    const show = (!q || p.includes(q) || z.includes(q) || m.includes(q)) && (filtAct === 'todos' || e === filtAct);
+    const w = c.dataset.warn, fl = c.dataset.fail;
+    let matchFilt = filtAct === 'todos' || e === filtAct;
+    // Para KPI "warn": mostrar todos los que tengan alertas (incluso si también incumplen)
+    if (filtAct === 'warn') matchFilt = w === '1';
+    // Para KPI "fail": mostrar todos los que incumplen
+    if (filtAct === 'fail') matchFilt = fl === '1';
+    const show = (!q || p.includes(q) || z.includes(q) || m.includes(q)) && matchFilt;
     c.style.display = show ? '' : 'none';
     if (show) vis++;
   });
@@ -319,7 +347,17 @@ function filtrar() {
 function renderKPIs() {
   const f = getFlota(), tot = f.length;
   let ok = 0, warn = 0, fail = 0, none = 0;
-  f.forEach(v => { const e = evalVehiculo(v.placa); if (e.estado === 'ok') ok++; else if (e.estado === 'warn') warn++; else if (e.estado === 'fail') fail++; else none++ });
+  f.forEach(v => {
+    const e = evalVehiculo(v.placa);
+    if (e.estado === 'none') none++;
+    else if (e.estado === 'ok') ok++;
+    else {
+      if (e.hasFail) fail++;
+      if (e.hasWarn) warn++;
+      // Si solo tiene warn sin fail, ya se contó arriba
+      // Si no tiene ni warn ni fail pero tiene data, sería ok (ya cubierto)
+    }
+  });
   const h = `
     <div class="kpi kpi-click" onclick="filtrarDesdeKPI('todos')"><div class="kpi-l">Total flota</div><div class="kpi-v">${tot}</div><div class="kpi-s">equipos registrados</div></div>
     <div class="kpi kpi-click" onclick="filtrarDesdeKPI('ok')"><div class="kpi-l">Cumplen</div><div class="kpi-v g">${ok}</div><div class="kpi-s">${tot ? Math.round(ok / tot * 100) : 0}% de la flota</div></div>

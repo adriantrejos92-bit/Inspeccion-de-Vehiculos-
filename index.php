@@ -21,6 +21,7 @@
     <button data-tab="config">Configuración</button>
   </div>
   <div class="topbar-right">
+    <button class="btn-theme" id="btnTheme" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
     <span class="topbar-date" id="fechaHoy"></span>
     <div class="dropdown" id="ddInsp">
       <button class="btn btn-amber" onclick="toggleDD()">
