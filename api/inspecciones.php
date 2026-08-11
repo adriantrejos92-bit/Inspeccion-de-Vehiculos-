@@ -41,6 +41,7 @@ if ($metodo === 'GET') {
         // Decodificar items JSON
         foreach ($rows as &$row) {
             $row['items'] = json_decode($row['items'], true);
+            $row['fotos'] = isset($row['fotos']) ? json_decode($row['fotos'], true) : [];
         }
         responderJSON($rows);
     }
@@ -105,6 +106,7 @@ if ($metodo === 'POST') {
     $hora      = trim($data['hora']);
     $obs       = isset($data['observaciones']) ? sanitizar($data['observaciones']) : '';
     $items     = $data['items'];
+    $fotos     = isset($data['fotos']) && is_array($data['fotos']) ? $data['fotos'] : [];
 
     // Validar tipo
     $tiposValidos = ['botiquin', 'carretilla', 'extintor', 'caja_fuerte', 'boton_panico', 'inspeccion_vehiculo'];
@@ -134,21 +136,27 @@ if ($metodo === 'POST') {
         responderJSON(['error' => 'El campo items debe ser un objeto con los campos de la inspección'], 400);
     }
 
+    // Validar máximo 5 fotos
+    if (count($fotos) > 5) {
+        responderJSON(['error' => 'Máximo 5 fotos por inspección'], 400);
+    }
+
     $itemsJSON = json_encode($items, JSON_UNESCAPED_UNICODE);
+    $fotosJSON = json_encode($fotos, JSON_UNESCAPED_UNICODE);
 
     if (DB_DRIVER === 'pgsql') {
         $stmt = $pdo->prepare(
-            'INSERT INTO inspecciones (tipo, placa, inspector, fecha, hora, observaciones, items)
-             VALUES (?, ?, ?, ?, ?, ?, ?::jsonb) RETURNING id'
+            'INSERT INTO inspecciones (tipo, placa, inspector, fecha, hora, observaciones, items, fotos)
+             VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb) RETURNING id'
         );
-        $stmt->execute([$tipo, $placa, $inspector, $fecha, $hora, $obs, $itemsJSON]);
+        $stmt->execute([$tipo, $placa, $inspector, $fecha, $hora, $obs, $itemsJSON, $fotosJSON]);
         $id = (int) $stmt->fetchColumn();
     } else {
         $stmt = $pdo->prepare(
-            'INSERT INTO inspecciones (tipo, placa, inspector, fecha, hora, observaciones, items)
-             VALUES (?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO inspecciones (tipo, placa, inspector, fecha, hora, observaciones, items, fotos)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$tipo, $placa, $inspector, $fecha, $hora, $obs, $itemsJSON]);
+        $stmt->execute([$tipo, $placa, $inspector, $fecha, $hora, $obs, $itemsJSON, $fotosJSON]);
         $id = (int) $pdo->lastInsertId();
     }
 

@@ -43,6 +43,7 @@ CREATE TABLE inspecciones (
   hora          TIME         NOT NULL,
   observaciones TEXT,
   items         JSONB        NOT NULL,
+  fotos         JSONB        DEFAULT '[]'::jsonb,
   created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT fk_placa FOREIGN KEY (placa) REFERENCES vehiculos(placa)

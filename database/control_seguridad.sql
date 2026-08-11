@@ -51,6 +51,7 @@ CREATE TABLE inspecciones (
   hora          TIME         NOT NULL,
   observaciones TEXT,
   items         JSON         NOT NULL COMMENT 'Campos específicos del formulario',
+  fotos         JSON         DEFAULT NULL COMMENT 'Array de fotos en base64',
   created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
 
   INDEX idx_placa (placa),

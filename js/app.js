@@ -63,6 +63,8 @@ const TIPOS_INSP = [
 const TIPOS_KEYS = TIPOS_INSP.map(t => t.key);
 
 let filtAct = 'todos', histFilt = 'todas', modalTipo = '';
+let _fotosTemp = []; // fotos pendientes para la inspección actual
+const MAX_FOTOS = 5;
 
 // ═══════════════════════════════════
 //  INIT
@@ -259,10 +261,12 @@ function renderDetVeh(placa) {
         rows += `<div class="det-row" style="color:var(--text2)">▸ ${label}: ${v}</div>`;
       }
     });
+    const fotos = insp.fotos && insp.fotos.length ? `<div class="foto-gallery">${insp.fotos.map(src => `<img src="${src}" onclick="abrirLightbox('${src.replace(/'/g, "\\'")}')">`).join('')}</div>` : '';
     html += `<div class="det-sec">
       <div class="det-h"><div class="sem-d ${ev.estado}"></div>${t.icon} ${t.name} <span style="margin-left:auto;font-size:.68rem;color:var(--muted)">${ev.pct}% · ${insp.fecha}</span></div>
       <div class="det-grid">${rows}</div>
       ${insp.observaciones ? `<div class="det-foot">${insp.observaciones}</div>` : ''}
+      ${fotos}
     </div>`;
   });
   html += `<div class="vc-acts">
@@ -335,8 +339,70 @@ function abrirModal(tipo, placaPre) {
 
   body += `<div class="fg"><label class="fl">Observaciones *</label><textarea class="ft" id="f_obs" placeholder="Notas adicionales…"></textarea></div>`;
 
+  body += `<div class="fg"><label class="fl">📷 Evidencia fotográfica (máx. ${MAX_FOTOS})</label>
+    <div class="foto-upload" id="fotoUpload" onclick="document.getElementById('fotoInput').click()">
+      <input type="file" id="fotoInput" accept="image/*" multiple onchange="agregarFotos(this.files)">
+      <div class="fu-icon">📷</div>
+      <div class="fu-text">Click para agregar fotos</div>
+      <div class="fu-count" id="fotoCount">0 de ${MAX_FOTOS}</div>
+    </div>
+    <div class="foto-preview" id="fotoPreview"></div>
+  </div>`;
+
+  _fotosTemp = [];
   document.getElementById('mBody').innerHTML = body;
   document.getElementById('overlay').classList.add('vis');
+}
+
+// ═══════════════════════════════════
+//  FOTOS — Redimensionar y previsualizar
+// ═══════════════════════════════════
+function redimensionarImagen(file, maxW = 800) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function agregarFotos(files) {
+  const restantes = MAX_FOTOS - _fotosTemp.length;
+  if (restantes <= 0) { toast(`Máximo ${MAX_FOTOS} fotos`, 1); return; }
+
+  const archivos = Array.from(files).slice(0, restantes);
+  for (const f of archivos) {
+    const base64 = await redimensionarImagen(f);
+    _fotosTemp.push(base64);
+  }
+  renderFotoPreview();
+  document.getElementById('fotoInput').value = '';
+}
+
+function eliminarFoto(idx) {
+  _fotosTemp.splice(idx, 1);
+  renderFotoPreview();
+}
+
+function renderFotoPreview() {
+  const cont = document.getElementById('fotoPreview');
+  cont.innerHTML = _fotosTemp.map((src, i) =>
+    `<div class="foto-thumb"><img src="${src}"><button class="foto-del" onclick="eliminarFoto(${i})">✕</button></div>`
+  ).join('');
+  document.getElementById('fotoCount').textContent = `${_fotosTemp.length} de ${MAX_FOTOS}`;
+  const upload = document.getElementById('fotoUpload');
+  if (_fotosTemp.length >= MAX_FOTOS) upload.style.opacity = '0.5';
+  else upload.style.opacity = '1';
 }
 
 function formBotiquin() {
@@ -427,7 +493,15 @@ function formInspeccionVehiculo() {
   </div>`;
 }
 
-function cerrarModal() { document.getElementById('overlay').classList.remove('vis'); }
+function cerrarModal() { document.getElementById('overlay').classList.remove('vis'); _fotosTemp = []; }
+
+function abrirLightbox(src) {
+  const lb = document.createElement('div');
+  lb.className = 'foto-lightbox';
+  lb.innerHTML = `<img src="${src}">`;
+  lb.onclick = () => lb.remove();
+  document.body.appendChild(lb);
+}
 
 // ═══════════════════════════════════
 //  GUARDAR
@@ -505,7 +579,8 @@ async function guardar() {
       fecha,
       hora,
       observaciones: obs,
-      items
+      items,
+      fotos: _fotosTemp
     });
     cerrarModal();
     await init();
