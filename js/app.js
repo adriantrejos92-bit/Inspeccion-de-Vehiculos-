@@ -406,7 +406,10 @@ function filtrar() {
 //  KPIs
 // ═══════════════════════════════════
 function renderKPIs() {
-  const f = getFlota(), tot = f.length;
+  const all = getFlota();
+  const zonaPlacas = getZonaPlacas(zonaFilt);
+  const f = zonaPlacas ? all.filter(v => zonaPlacas.includes(v.placa)) : all;
+  const tot = f.length;
   let ok = 0, warn = 0, fail = 0, none = 0;
   f.forEach(v => {
     const e = evalVehiculo(v.placa);
@@ -415,8 +418,6 @@ function renderKPIs() {
     else {
       if (e.hasFail) fail++;
       if (e.hasWarn) warn++;
-      // Si solo tiene warn sin fail, ya se contó arriba
-      // Si no tiene ni warn ni fail pero tiene data, sería ok (ya cubierto)
     }
   });
   const h = `
