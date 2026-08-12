@@ -123,6 +123,9 @@
 
   <!-- ═══ TAB: DASHBOARD ═══ -->
   <div class="tab" id="tab-dashboard">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button class="btn btn-navy btn-sm" onclick="descargarDashExcel()">📥 Descargar informe por tipo</button>
+    </div>
     <div class="kpis" id="kpis2"></div>
     <div class="dcard" style="margin-bottom:14px">
       <h3>Cumplimiento por tipo de inspección</h3>

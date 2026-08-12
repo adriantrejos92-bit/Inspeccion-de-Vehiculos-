@@ -995,6 +995,10 @@ function descargarExcel() {
   window.open(url, '_blank');
 }
 
+function descargarDashExcel() {
+  window.open('api/exportar_dashboard.php', '_blank');
+}
+
 // ═══════════════════════════════════
 //  CANVAS BAR CHART
 // ═══════════════════════════════════
