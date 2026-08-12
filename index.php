@@ -84,22 +84,26 @@
   <div class="tab on" id="tab-home">
     <h2 class="home-title">Panel de Control — CONALCA</h2>
     <p class="home-subtitle" id="homeDate"></p>
+
+    <h3 class="home-zone-title">📍 Siberia</h3>
     <div class="home-charts">
-      <div class="home-card">
-        <h3>Inspecciones realizadas</h3>
-        <canvas id="pieInspeccionados" width="220" height="220"></canvas>
-        <div class="home-legend" id="legInspeccionados"></div>
-      </div>
-      <div class="home-card">
-        <h3>Vehículos con alertas</h3>
-        <canvas id="pieAlertas" width="220" height="220"></canvas>
-        <div class="home-legend" id="legAlertas"></div>
-      </div>
-      <div class="home-card">
-        <h3>Vehículos con vencimientos</h3>
-        <canvas id="pieVencidos" width="220" height="220"></canvas>
-        <div class="home-legend" id="legVencidos"></div>
-      </div>
+      <div class="home-card"><h3>Inspecciones realizadas</h3><canvas id="pieSib_Insp" width="220" height="220"></canvas><div class="home-legend" id="legSib_Insp"></div></div>
+      <div class="home-card"><h3>Vehículos con alertas</h3><canvas id="pieSib_Warn" width="220" height="220"></canvas><div class="home-legend" id="legSib_Warn"></div></div>
+      <div class="home-card"><h3>Vehículos con vencimientos</h3><canvas id="pieSib_Fail" width="220" height="220"></canvas><div class="home-legend" id="legSib_Fail"></div></div>
+    </div>
+
+    <h3 class="home-zone-title">📍 Chapinero</h3>
+    <div class="home-charts">
+      <div class="home-card"><h3>Inspecciones realizadas</h3><canvas id="pieChap_Insp" width="220" height="220"></canvas><div class="home-legend" id="legChap_Insp"></div></div>
+      <div class="home-card"><h3>Vehículos con alertas</h3><canvas id="pieChap_Warn" width="220" height="220"></canvas><div class="home-legend" id="legChap_Warn"></div></div>
+      <div class="home-card"><h3>Vehículos con vencimientos</h3><canvas id="pieChap_Fail" width="220" height="220"></canvas><div class="home-legend" id="legChap_Fail"></div></div>
+    </div>
+
+    <h3 class="home-zone-title">📍 Engativá</h3>
+    <div class="home-charts">
+      <div class="home-card"><h3>Inspecciones realizadas</h3><canvas id="pieEng_Insp" width="220" height="220"></canvas><div class="home-legend" id="legEng_Insp"></div></div>
+      <div class="home-card"><h3>Vehículos con alertas</h3><canvas id="pieEng_Warn" width="220" height="220"></canvas><div class="home-legend" id="legEng_Warn"></div></div>
+      <div class="home-card"><h3>Vehículos con vencimientos</h3><canvas id="pieEng_Fail" width="220" height="220"></canvas><div class="home-legend" id="legEng_Fail"></div></div>
     </div>
   </div>
 

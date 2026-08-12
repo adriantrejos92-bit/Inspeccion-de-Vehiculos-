@@ -716,40 +716,46 @@ async function guardar() {
 function renderHome() {
   document.getElementById('homeDate').textContent = new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  const f = getFlota(), tot = f.length;
-  let inspeccionados = 0, conAlertas = 0, conVencidos = 0;
-
-  f.forEach(v => {
-    const ev = evalVehiculo(v.placa);
-    if (ev.estado !== 'none') inspeccionados++;
-    if (ev.hasWarn) conAlertas++;
-    if (ev.hasFail) conVencidos++;
-  });
-
-  const sinInspeccion = tot - inspeccionados;
-  const sinAlertas = tot - conAlertas;
-  const sinVencidos = tot - conVencidos;
-
   const cs = getComputedStyle(document.documentElement);
   const green = cs.getPropertyValue('--green').trim() || '#1A7D4B';
   const amber = cs.getPropertyValue('--amber').trim() || '#BF7B08';
-  const red = cs.getPropertyValue('--red').trim() || '#BE2D2D';
+  const red   = cs.getPropertyValue('--red').trim()   || '#BE2D2D';
   const muted = cs.getPropertyValue('--muted').trim() || '#8891A2';
 
-  drawPie('pieInspeccionados', [
-    { value: inspeccionados, color: green, label: 'Inspeccionados' },
-    { value: sinInspeccion, color: muted, label: 'Sin inspección' }
-  ], 'legInspeccionados');
+  const zonas = [
+    { key: 'Sib',  nombre: 'Siberia' },
+    { key: 'Chap', nombre: 'Chapinero' },
+    { key: 'Eng',  nombre: 'Engativa' }
+  ];
 
-  drawPie('pieAlertas', [
-    { value: conAlertas, color: amber, label: 'Con alertas' },
-    { value: sinAlertas, color: green, label: 'Sin alertas' }
-  ], 'legAlertas');
+  zonas.forEach(z => {
+    const placas = getZonaPlacas(z.nombre);
+    const vehs = placas ? getFlota().filter(v => placas.includes(v.placa)) : getFlota();
+    const tot = vehs.length;
+    let inspeccionados = 0, conAlertas = 0, conVencidos = 0;
 
-  drawPie('pieVencidos', [
-    { value: conVencidos, color: red, label: 'Con vencimientos' },
-    { value: sinVencidos, color: green, label: 'Al día' }
-  ], 'legVencidos');
+    vehs.forEach(v => {
+      const ev = evalVehiculo(v.placa);
+      if (ev.estado !== 'none') inspeccionados++;
+      if (ev.hasWarn) conAlertas++;
+      if (ev.hasFail) conVencidos++;
+    });
+
+    drawPie('pie' + z.key + '_Insp', [
+      { value: inspeccionados, color: green, label: 'Inspeccionados' },
+      { value: tot - inspeccionados, color: muted, label: 'Sin inspección' }
+    ], 'leg' + z.key + '_Insp');
+
+    drawPie('pie' + z.key + '_Warn', [
+      { value: conAlertas, color: amber, label: 'Con alertas' },
+      { value: tot - conAlertas, color: green, label: 'Sin alertas' }
+    ], 'leg' + z.key + '_Warn');
+
+    drawPie('pie' + z.key + '_Fail', [
+      { value: conVencidos, color: red, label: 'Con vencimientos' },
+      { value: tot - conVencidos, color: green, label: 'Al día' }
+    ], 'leg' + z.key + '_Fail');
+  });
 }
 
 function drawPie(canvasId, segments, legendId) {
