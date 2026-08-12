@@ -160,7 +160,8 @@ body{font-family:"Segoe UI",system-ui,-apple-system,sans-serif;background:var(--
 /* ─── VEHICLE CARD ─── */
 .vc{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-sm);overflow:hidden;transition:box-shadow .2s}
 .vc:hover{box-shadow:var(--sh-md)}
-.vc-head{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.vc-top{cursor:pointer;user-select:none}
+.vc-head{padding:12px 14px;display:flex;align-items:center;gap:10px}
 .sem-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.65rem;flex-shrink:0;color:#fff;font-variant-numeric:tabular-nums}
 .sem-circle.ok{background:var(--green)}.sem-circle.warn{background:var(--amber)}.sem-circle.fail{background:var(--red)}.sem-circle.none{background:var(--muted)}
 .placa{font-family:"Cascadia Code","Consolas","SF Mono",monospace;font-weight:800;font-size:.88rem;letter-spacing:.05em;color:var(--navy);background:var(--border-lt);padding:2px 9px;border-radius:5px}

@@ -126,9 +126,10 @@ function setZonaFilt(zona, btn) {
 }
 
 function toggleCard(e, el) {
+  // No cerrar si se clickeó un botón interno
+  if (e.target.closest('button') || e.target.closest('a')) return;
   e.stopPropagation();
-  const card = el.closest('.vc');
-  card.classList.toggle('open');
+  el.closest('.vc').classList.toggle('open');
 }
 
 function toggleSidebar() {
@@ -298,17 +299,19 @@ function renderGrid() {
     const ev = evalVehiculo(v.placa);
     const evArr = ev.evals || TIPOS_INSP.map(() => evalInsp(null));
     return `<div class="vc" data-placa="${v.placa}" data-estado="${ev.estado}" data-warn="${ev.hasWarn?1:0}" data-fail="${ev.hasFail?1:0}" data-zona="${v.zona || ''}" data-marca="${v.marca || ''}">
-      <div class="vc-head" onclick="toggleCard(event, this)">
-        <div class="sem-circle ${ev.estado}">${ev.estado === 'none' ? '—' : ev.pct + '%'}</div>
-        <span class="placa">${v.placa}</span>
-        <div class="vc-info">
-          <div class="vc-sub">${v.marca || ''} ${v.linea || ''} ${v.anio ? '(' + v.anio + ')' : ''}</div>
-          <div class="vc-sub" style="font-size:.68rem">${v.tipo || ''} · ${v.zona || ''}</div>
+      <div class="vc-top" onclick="toggleCard(event, this)">
+        <div class="vc-head">
+          <div class="sem-circle ${ev.estado}">${ev.estado === 'none' ? '—' : ev.pct + '%'}</div>
+          <span class="placa">${v.placa}</span>
+          <div class="vc-info">
+            <div class="vc-sub">${v.marca || ''} ${v.linea || ''} ${v.anio ? '(' + v.anio + ')' : ''}</div>
+            <div class="vc-sub" style="font-size:.68rem">${v.tipo || ''} · ${v.zona || ''}</div>
+          </div>
+          <span class="vc-chev">▼</span>
         </div>
-        <span class="vc-chev">▼</span>
-      </div>
-      <div class="sem-strip">
-        ${TIPOS_INSP.map((t, i) => `<div class="sem-i"><div class="sem-d ${evArr[i].estado}"></div><div class="sem-t">${t.label}</div></div>`).join('')}
+        <div class="sem-strip">
+          ${TIPOS_INSP.map((t, i) => `<div class="sem-i"><div class="sem-d ${evArr[i].estado}"></div><div class="sem-t">${t.label}</div></div>`).join('')}
+        </div>
       </div>
       <div class="vc-det">
         ${renderDetVeh(v.placa)}
