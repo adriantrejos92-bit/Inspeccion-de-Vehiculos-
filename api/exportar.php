@@ -73,7 +73,9 @@ function evalCumplimiento($items) {
     $noOk = [];
     $hoy = new DateTime();
 
+    $infoKeys = ['fecha obturacion'];
     foreach ($items as $key => $val) {
+        if (in_array($key, $infoKeys)) continue;
         $label = str_replace('_', ' ', $key);
         if (is_bool($val)) {
             $total++;

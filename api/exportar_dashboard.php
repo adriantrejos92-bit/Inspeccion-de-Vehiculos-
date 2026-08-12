@@ -53,7 +53,9 @@ function evaluar($items) {
     $total = 0; $cumple = 0;
     $alertas = []; $vencidos = []; $noOk = [];
 
+    $infoKeys = ['fecha obturacion']; // solo informativas, no evalúan
     foreach ($items as $key => $val) {
+        if (in_array($key, $infoKeys)) continue;
         $label = str_replace('_', ' ', $key);
         if (is_bool($val)) {
             $total++;

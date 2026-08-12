@@ -258,7 +258,11 @@ function evalInsp(insp) {
   const hoy = new Date();
   let total = 0, ok = 0, vencido = false, proximo = false;
 
+  // Keys informativas (no se evalúan como criterio)
+  const infoKeys = ['fecha obturacion'];
+
   Object.entries(items).forEach(([k, v]) => {
+    if (infoKeys.includes(k)) return; // solo informativo
     if (typeof v === 'boolean') {
       total++;
       if (v) ok++;
@@ -601,7 +605,8 @@ function formCajaFuerte() {
 
 function formBotonPanico() {
   return `<div class="clsec"><div class="clsec-h">🚨 Inspección de Botón de Pánico</div>
-    <div class="cl-row"><label>Fecha de obturación del botón *</label><input type="date" id="bp_obturacion" class="fi" style="width:auto;flex:0"></div>
+    <div class="cl-row"><label>Fecha de obturación del botón</label><input type="date" id="bp_obturacion" class="fi" style="width:auto;flex:0"></div>
+    <div class="cl-row"><label>¿El botón de pánico funciona correctamente? *</label><div class="radio-group"><label><input type="radio" name="bp_funciona" value="si"> Sí</label><label><input type="radio" name="bp_funciona" value="no"> No</label></div></div>
   </div>`;
 }
 
@@ -679,7 +684,9 @@ async function guardar() {
   }
   else if (modalTipo === 'boton_panico') {
     const ob = document.getElementById('bp_obturacion').value;
-    items['obturacion boton'] = ob || '';
+    if (ob) items['fecha obturacion'] = ob; // solo informativo, no evalúa
+    const r = document.querySelector('input[name="bp_funciona"]:checked');
+    items['funciona correctamente'] = r ? r.value === 'si' : false;
   }
   else if (modalTipo === 'inspeccion_vehiculo') {
     const campos = ['tacos_seguridad', 'conos_seguridad', 'orden_limpieza', 'silleteria'];
