@@ -34,17 +34,15 @@ $tipos = [
 // Obtener todos los vehículos
 $vehiculos = $pdo->query('SELECT * FROM vehiculos ORDER BY placa')->fetchAll();
 
-// Obtener la última inspección de cada tipo por placa
-function getUltimaInspeccion($pdo, $placa, $tipo) {
-    $stmt = $pdo->prepare(
-        'SELECT * FROM inspecciones WHERE placa = ? AND tipo = ? ORDER BY fecha DESC, hora DESC LIMIT 1'
-    );
-    $stmt->execute([$placa, $tipo]);
-    $row = $stmt->fetch();
-    if ($row) {
-        $row['items'] = is_string($row['items']) ? json_decode($row['items'], true) : $row['items'];
-    }
-    return $row;
+// Obtener la última inspección de cada (placa, tipo) en UNA sola consulta
+$sqlUltimas = DB_DRIVER === 'pgsql'
+    ? 'SELECT DISTINCT ON (placa, tipo) * FROM inspecciones ORDER BY placa, tipo, fecha DESC, hora DESC'
+    : 'SELECT i.* FROM inspecciones i INNER JOIN (SELECT placa, tipo, MAX(CONCAT(fecha, " ", hora)) AS mx FROM inspecciones GROUP BY placa, tipo) u ON i.placa = u.placa AND i.tipo = u.tipo AND CONCAT(i.fecha, " ", i.hora) = u.mx';
+
+$ultimas = [];
+foreach ($pdo->query($sqlUltimas)->fetchAll() as $row) {
+    $row['items'] = is_string($row['items']) ? json_decode($row['items'], true) : $row['items'];
+    $ultimas[$row['placa'] . '|' . $row['tipo']] = $row;
 }
 
 // Evaluar cumplimiento de una inspección
@@ -129,7 +127,7 @@ foreach ($tipos as $tipoKey => $tipoLabel) {
     // Datos — solo vehículos que NO cumplen o tienen alertas o sin inspección
     $row = 2;
     foreach ($vehiculos as $v) {
-        $insp = getUltimaInspeccion($pdo, $v['placa'], $tipoKey);
+        $insp = $ultimas[$v['placa'] . '|' . $tipoKey] ?? null;
 
         if (!$insp) {
             // Sin inspección
