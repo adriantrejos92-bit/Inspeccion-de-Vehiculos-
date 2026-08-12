@@ -101,7 +101,7 @@ body{font-family:"Segoe UI",system-ui,-apple-system,sans-serif;background:var(--
 .sb-arrow{margin-left:auto;font-size:.7rem;transition:transform .2s;color:var(--muted)}
 .sb-item.on .sb-arrow{transform:rotate(180deg)}
 .sb-sub{display:none;padding:0 0 4px}
-.sb-item.on ~ .sb-sub,.sb-sub.open{display:block}
+.sb-sub.open{display:block}
 .sb-subitem{display:block;width:100%;padding:6px 18px 6px 50px;border:none;background:0;font-size:.76rem;font-weight:500;color:var(--muted);cursor:pointer;text-align:left;transition:.15s}
 .sb-subitem:hover{background:var(--card-alt);color:var(--text)}
 .sb-subitem.on{color:var(--navy);font-weight:700}

@@ -104,7 +104,8 @@ const SEDES = ['Siberia', 'Chapinero', 'Engativa'];
 
 function switchTab(tab, btn) {
   document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
+  const target = btn || document.querySelector(`.sb-item[data-tab="${tab}"]`);
+  if (target) target.classList.add('on');
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
   document.getElementById('tab-' + tab).classList.add('on');
   const subVeh = document.getElementById('sbSubVeh');
