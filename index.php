@@ -10,14 +10,17 @@
 
 <!-- ═══ SIDEBAR ═══ -->
 <aside class="sidebar" id="sidebar">
-  <div class="sb-brand">
+  <div class="sb-brand sb-brand-click" onclick="switchTab('home', document.querySelector('.sb-item[data-tab=home]'))">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 18h10M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 9h3M8 12h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".5"/><circle cx="17" cy="9" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
     <span>CONALCA</span>
   </div>
 
   <nav class="sb-nav">
     <div class="sb-section">PRINCIPAL</div>
-    <button class="sb-item on" data-tab="vehiculos" onclick="switchTab('vehiculos',this)">
+    <button class="sb-item on" data-tab="home" onclick="switchTab('home',this)">
+      <span class="sb-icon">🏠</span> Inicio
+    </button>
+    <button class="sb-item" data-tab="vehiculos" onclick="switchTab('vehiculos',this)">
       <span class="sb-icon">🚛</span> Vehículos
       <span class="sb-arrow">▾</span>
     </button>
@@ -77,8 +80,31 @@
 
   <div class="main">
 
+  <!-- ═══ TAB: HOME ═══ -->
+  <div class="tab on" id="tab-home">
+    <h2 class="home-title">Panel de Control — CONALCA</h2>
+    <p class="home-subtitle" id="homeDate"></p>
+    <div class="home-charts">
+      <div class="home-card">
+        <h3>Inspecciones realizadas</h3>
+        <canvas id="pieInspeccionados" width="220" height="220"></canvas>
+        <div class="home-legend" id="legInspeccionados"></div>
+      </div>
+      <div class="home-card">
+        <h3>Vehículos con alertas</h3>
+        <canvas id="pieAlertas" width="220" height="220"></canvas>
+        <div class="home-legend" id="legAlertas"></div>
+      </div>
+      <div class="home-card">
+        <h3>Vehículos con vencimientos</h3>
+        <canvas id="pieVencidos" width="220" height="220"></canvas>
+        <div class="home-legend" id="legVencidos"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══ TAB: VEHÍCULOS ═══ -->
-  <div class="tab on" id="tab-vehiculos">
+  <div class="tab" id="tab-vehiculos">
     <div class="kpis" id="kpis1"></div>
     <div class="fbar">
       <input type="search" class="search" placeholder="Buscar placa, marca o zona…" id="searchBox" oninput="filtrar()">

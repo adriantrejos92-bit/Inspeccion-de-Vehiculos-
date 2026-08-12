@@ -110,6 +110,7 @@ function switchTab(tab, btn) {
   const subVeh = document.getElementById('sbSubVeh');
   if (tab === 'vehiculos') subVeh.classList.add('open');
   else subVeh.classList.remove('open');
+  if (tab === 'home') renderHome();
   if (tab === 'dashboard') renderDash();
   if (tab === 'historial') renderHist();
   if (tab === 'config') renderConfig();
@@ -159,6 +160,7 @@ function getZonaPlacas(zona) {
 
 async function init() {
   await cargarDatos();
+  renderHome();
   renderGrid();
   renderKPIs();
   renderConfig();
@@ -704,6 +706,111 @@ async function guardar() {
     toast('Inspección guardada ✓');
   } catch (e) {
     toast(e.message, 1);
+  }
+}
+
+// ═══════════════════════════════════
+//  HOME — 3 PIE CHARTS
+// ═══════════════════════════════════
+function renderHome() {
+  document.getElementById('homeDate').textContent = new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  const f = getFlota(), tot = f.length;
+  let inspeccionados = 0, conAlertas = 0, conVencidos = 0;
+
+  f.forEach(v => {
+    const ev = evalVehiculo(v.placa);
+    if (ev.estado !== 'none') inspeccionados++;
+    if (ev.hasWarn) conAlertas++;
+    if (ev.hasFail) conVencidos++;
+  });
+
+  const sinInspeccion = tot - inspeccionados;
+  const sinAlertas = tot - conAlertas;
+  const sinVencidos = tot - conVencidos;
+
+  const cs = getComputedStyle(document.documentElement);
+  const green = cs.getPropertyValue('--green').trim() || '#1A7D4B';
+  const amber = cs.getPropertyValue('--amber').trim() || '#BF7B08';
+  const red = cs.getPropertyValue('--red').trim() || '#BE2D2D';
+  const muted = cs.getPropertyValue('--muted').trim() || '#8891A2';
+
+  drawPie('pieInspeccionados', [
+    { value: inspeccionados, color: green, label: 'Inspeccionados' },
+    { value: sinInspeccion, color: muted, label: 'Sin inspección' }
+  ], 'legInspeccionados');
+
+  drawPie('pieAlertas', [
+    { value: conAlertas, color: amber, label: 'Con alertas' },
+    { value: sinAlertas, color: green, label: 'Sin alertas' }
+  ], 'legAlertas');
+
+  drawPie('pieVencidos', [
+    { value: conVencidos, color: red, label: 'Con vencimientos' },
+    { value: sinVencidos, color: green, label: 'Al día' }
+  ], 'legVencidos');
+}
+
+function drawPie(canvasId, segments, legendId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const size = 220;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const cx = size / 2, cy = size / 2, r = 85;
+  const total = segments.reduce((s, seg) => s + seg.value, 0);
+
+  if (total === 0) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = segments[1]?.color || '#ccc';
+    ctx.fill();
+  } else {
+    let startAngle = -Math.PI / 2;
+    segments.forEach(seg => {
+      if (seg.value === 0) return;
+      const sliceAngle = (seg.value / total) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, startAngle, startAngle + sliceAngle);
+      ctx.closePath();
+      ctx.fillStyle = seg.color;
+      ctx.fill();
+      startAngle += sliceAngle;
+    });
+  }
+
+  // Donut hole
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#fff';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 55, 0, Math.PI * 2);
+  ctx.fillStyle = bg;
+  ctx.fill();
+
+  // Center text
+  const mainVal = segments[0].value;
+  const pct = total ? Math.round(mainVal / total * 100) : 0;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#333';
+  ctx.font = 'bold 28px "Segoe UI", system-ui, sans-serif';
+  ctx.fillText(mainVal + '/' + total, cx, cy - 8);
+  ctx.font = '600 13px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#888';
+  ctx.fillText(pct + '%', cx, cy + 16);
+
+  // Legend
+  const leg = document.getElementById(legendId);
+  if (leg) {
+    leg.innerHTML = segments.map(s =>
+      `<div class="hl-item"><div class="hl-dot" style="background:${s.color}"></div>${s.label}: ${s.value}</div>`
+    ).join('');
   }
 }
 
